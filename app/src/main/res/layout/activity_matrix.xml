@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="maps.matrix.MatrixActivity"
+    android:orientation="vertical"
+    android:layout_margin="10dp"
+    android:paddingTop="60dp"
+    android:paddingBottom="60dp"
+    android:paddingLeft="20dp"
+    android:paddingRight="20dp"
+    >
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:textSize="20sp"
+        android:textAlignment="center"
+        android:text="You think that's air you're breathing?"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:layout_margin="10dp"
+        android:layout_weight="1"
+        >
+
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cell11"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            ></Spinner>
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cell12"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            ></Spinner>
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            android:id="@+id/cell13"
+            ></Spinner>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            android:id="@+id/output1" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:layout_margin="10dp"
+        android:layout_weight="1"
+        >
+
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cell21"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            ></Spinner>
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cell22"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            ></Spinner>
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            android:id="@+id/cell23"
+            ></Spinner>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            android:id="@+id/output2" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:layout_margin="10dp"
+        android:layout_weight="1"
+        >
+
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cell31"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            ></Spinner>
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cell32"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            ></Spinner>
+        <Spinner
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            android:id="@+id/cell33"
+            ></Spinner>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingRight="15dp"
+            android:paddingLeft="15dp"
+            android:id="@+id/output3" />
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/clear_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="100dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:drawableLeft="@drawable/ic_clear_black_20dp"
+            android:onClick="clearData"
+            android:padding="10dp"
+            android:text="Clear"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/display_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:backgroundTint="@color/colorPrimary"
+            android:drawableLeft="@drawable/ic_lock_open_black_24dp"
+            android:elevation="0dp"
+            android:onClick="displayMatrix"
+            android:text=" Do it"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+</LinearLayout>
