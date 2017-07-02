@@ -1,10 +1,15 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+
+import database.Matrix;
+import database.MatrixDatabase;
 
 public class Preferences {
     private final String PREFS_NAME = "matrixPreferences";
@@ -35,6 +40,16 @@ public class Preferences {
         if(newP.length() > 0 && validatePassword(oldP)){
             Sha1 sha1 = new Sha1(newP);
             try {
+                //first update all the matrices to be encrypted using the new password
+                MatrixDatabase mDbHelper = new MatrixDatabase(myContext);
+                SQLiteDatabase db = mDbHelper.getReadableDatabase();
+                ArrayList<Matrix> matrices = Matrix.getAll(db);
+
+                for(Matrix m: matrices){
+                    m.decryptEncrypt(oldP, newP);//re-encrypt the matrix
+                    m.updateMatrix(db);//update it in the database
+                }
+                //then save the new password
                 editor.putString(PASSWORD_NAME, sha1.hash());
                 editor.commit();
                 return true;
@@ -66,7 +81,6 @@ public class Preferences {
             return true;
 
         if (attempt.length() != real.length()){
-            System.out.println("Different length: " + attempt + " - " +  real);
             return false;
         }
 

@@ -10,7 +10,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import database.Matrix;
-import maps.matrix.R;
+import maps.bank_matrix.R;
 
 public class MatrixListAdapter extends BaseAdapter {
     private Context context;
@@ -44,7 +44,7 @@ public class MatrixListAdapter extends BaseAdapter {
         if (vi == null)
             vi = inflater.inflate(R.layout.row_layout_matrix, null);
 
-        ((TextView) vi.findViewById(R.id.matrixName)).setText(data.get(position).name);
+        ((TextView) vi.findViewById(R.id.matrixName)).setText(data.get(position).getName(context));
         ((TextView) vi.findViewById(R.id.dimensions)).setText(data.get(position).getDimensionString());
 
         return vi;

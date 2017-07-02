@@ -1,6 +1,7 @@
 package database;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Base64;
@@ -19,6 +20,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 import database.MatrixReader.MatrixEntry;
+import maps.bank_matrix.R;
 
 public class Matrix {
     public long id;
@@ -159,13 +161,13 @@ public class Matrix {
     }
 
     public String[][] getMatrix(String passkey){
-        String[][] result = new String[8][8];
+        String[][] result = new String[lines][columns];
         String myMatrix = decrypt(passkey, value);
-        if(myMatrix.length() != 192)
+        if(myMatrix.length() != lines*columns*3)
             return result;
         int k = 0;
-        for(int i = 0; i < 8; i++){
-            for(int j = 0; j < 8; j++){
+        for(int i = 0; i < lines; i++){
+            for(int j = 0; j < columns; j++){
                 result[i][j] = myMatrix.substring(k,k+3);
                 k+=3;
             }
@@ -173,9 +175,19 @@ public class Matrix {
         return result;
     }
 
+    public String getName(Context context) {
+        return name.length() == 0? context.getString(R.string.matrix_unnamed):name;
+    }
 
 
     //Encryption functions
+
+    public void decryptEncrypt(String oldPasskey, String newPasskey){
+        String temp = value;
+        temp = Matrix.decrypt(oldPasskey, temp);
+        temp = Matrix.encrypt(newPasskey, temp);
+        value = temp;
+    }
 
     public boolean validMatrix(){
         return value.length()>0;
@@ -237,4 +249,5 @@ public class Matrix {
     public int getTotalChars() {
         return 3 * lines * columns;
     }
+
 }

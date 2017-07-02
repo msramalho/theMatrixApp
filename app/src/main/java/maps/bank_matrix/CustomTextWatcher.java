@@ -1,4 +1,4 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import android.text.Editable;
 import android.text.TextWatcher;

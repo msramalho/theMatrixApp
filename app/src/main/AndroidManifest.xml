@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="maps.matrix">
+    package="maps.bank_matrix">
 
     <application
         android:allowBackup="true"
@@ -9,18 +9,21 @@
         android:roundIcon="@drawable/matrix"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity
-            android:name=".MainActivity"
-            android:windowSoftInputMode="stateVisible">
+            android:name="maps.bank_matrix.MainActivity"
+            android:windowSoftInputMode="stateVisible|adjustPan"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MatrixActivity" />
-        <activity android:name=".UpdateMatrix" />
-        <activity android:name=".MatrixList"></activity>
+        <activity android:name="maps.bank_matrix.MatrixActivity" />
+        <activity android:name="maps.bank_matrix.UpdateMatrix" />
+        <activity android:name="maps.bank_matrix.MatrixList"></activity>
+
     </application>
 
 </manifest>

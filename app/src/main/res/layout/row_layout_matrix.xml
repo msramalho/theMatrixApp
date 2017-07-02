@@ -10,7 +10,6 @@
         android:id="@+id/matrixName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Caica Geral de Depósitos"
         android:textSize="@dimen/textMedium"
         android:padding="@dimen/textPadding"
         android:textStyle="bold" />
@@ -19,7 +18,6 @@
         android:id="@+id/dimensions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="8 x 8 matrix"
         android:padding="@dimen/textPadding"
         android:textSize="@dimen/textSmall"
         />

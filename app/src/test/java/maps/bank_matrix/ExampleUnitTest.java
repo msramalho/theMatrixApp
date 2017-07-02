@@ -1,4 +1,4 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import org.junit.Test;
 

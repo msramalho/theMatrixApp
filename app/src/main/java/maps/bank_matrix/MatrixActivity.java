@@ -1,4 +1,4 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
@@ -10,6 +10,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+
 import database.Matrix;
 import database.MatrixDatabase;
 
@@ -20,7 +22,7 @@ public class MatrixActivity extends AppCompatActivity {
     private Spinner sp21, sp22, sp23;
     private Spinner sp31, sp32, sp33;
     private TextView tv1, tv2, tv3;
-
+    private TextView matrixName;
     private String passkey;
 
     private String[][] matrix;
@@ -45,7 +47,6 @@ public class MatrixActivity extends AppCompatActivity {
             finish();
         }
         matrix = m.getMatrix(passkey);
-
         /*MatrixEncryption me = new MatrixEncryption(this, passkey);
 
         if(!me.validMatrix()){
@@ -54,6 +55,9 @@ public class MatrixActivity extends AppCompatActivity {
         }else{
             matrix = me.getMatrix();
         }*/
+
+        matrixName = (TextView) findViewById(R.id.matrixName);
+        matrixName.setText(m.name);
 
         //initialize the spinners
         sp11 = (Spinner) findViewById(R.id.cell11);
@@ -72,14 +76,22 @@ public class MatrixActivity extends AppCompatActivity {
         tv3 = (TextView) findViewById(R.id.output3);
 
         //adapter for the letters
-        ArrayAdapter<CharSequence> letterAdapter = ArrayAdapter.createFromResource(this, R.array.lettersArray, android.R.layout.simple_spinner_item);
+        ArrayList<String> letters = new ArrayList<>();
+        for(int j = 0; j< m.lines; j++){
+            letters.add(String.valueOf((char)(65 + j)));
+        }
+        ArrayAdapter<String> letterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, letters);
         letterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sp11.setAdapter(letterAdapter);
         sp21.setAdapter(letterAdapter);
         sp31.setAdapter(letterAdapter);
 
         //adapter for the numbers 1 to 9
-        ArrayAdapter<CharSequence> numberAdapter = ArrayAdapter.createFromResource(this, R.array.numbersArray, android.R.layout.simple_spinner_item);
+        ArrayList<String> numbers = new ArrayList<>();
+        for(int j = 0; j< m.columns; j++){
+            numbers.add(String.valueOf(j+1));
+        }
+        ArrayAdapter<String> numberAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, numbers);
         numberAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sp12.setAdapter(numberAdapter);
         sp22.setAdapter(numberAdapter);

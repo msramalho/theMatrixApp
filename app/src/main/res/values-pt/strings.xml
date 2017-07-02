@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Matrix</string>
+    <string name="abort">Cancelar</string>
+    <string name="matrixColumns">Colunas:</string>
+    <string name="matrixLines">Linhas:</string>
+    <string name="matrixName">Nome:</string>
+    <string name="matrix_unnamed">Sem nome</string>
+    <string name="new_pasword">nova pass</string>
+    <string name="no_matrix_added">Nenhum Cartão Matriz para mostrar</string>
+    <string name="old_pasword">pass antiga</string>
+    <string name="save">" guardar"</string>
+    <string name="update">" editar"</string>
+    <string-array name="indexArray">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+</resources>

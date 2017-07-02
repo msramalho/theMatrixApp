@@ -1,7 +1,9 @@
-package maps.matrix;
+package maps.bank_matrix;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -18,6 +20,7 @@ import gui.MatrixListAdapter;
 
 public class MatrixList extends AppCompatActivity {
     private String passkey;
+    private MatrixDatabase mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,8 +29,8 @@ public class MatrixList extends AppCompatActivity {
 
         passkey = getIntent().getStringExtra("passkey");
 
-        MatrixDatabase mDbHelper = new MatrixDatabase(MatrixList.this);
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        mDbHelper = new MatrixDatabase(MatrixList.this);
+        final SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         final ArrayList<Matrix> matrices = Matrix.getAll(db);
 
@@ -53,7 +56,30 @@ public class MatrixList extends AppCompatActivity {
                 startActivity(intentMatrixDetails);
             }
         });
-        mDbHelper.close();
+        //long click --> prompt delete
+        deviceList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+                new AlertDialog.Builder(MatrixList.this)
+                    .setTitle("Confirmation")
+                    .setMessage("Do you want to delete this matrix ("+matrices.get(position).getName(MatrixList.this)+")?")
+                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            matrices.get(position).deleteMatrix(db);
+                            restart();
+                        }})
+                    .setNegativeButton(android.R.string.no, null).show();
+                return true;
+            }
+        });
+
+    }
+
+    private void restart(){
+        Intent intent = getIntent();
+        finish();
+        startActivity(intent);
     }
 
     public void btnAddMatrix(View view) {
@@ -61,5 +87,11 @@ public class MatrixList extends AppCompatActivity {
         intentNewMatrix.putExtra("update", false);
         intentNewMatrix.putExtra("passkey", passkey);
         startActivity(intentNewMatrix);
+    }
+
+    @Override
+    protected void onDestroy() {
+        mDbHelper.close();
+        super.onDestroy();
     }
 }

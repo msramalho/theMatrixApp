@@ -1,27 +1,16 @@
 <resources>
     <string name="app_name">Matrix</string>
     <string name="no_matrix_added">No Matrix added so far</string>
-    <string name="eight">8</string>
-    <string-array name="lettersArray">
-        <item>A</item>
-        <item>B</item>
-        <item>C</item>
-        <item>D</item>
-        <item>E</item>
-        <item>F</item>
-        <item>G</item>
-        <item>H</item>
-    </string-array>
-    <string-array name="numbersArray">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-        <item>7</item>
-        <item>8</item>
-    </string-array>
+    <string name="eight" translatable="false">8</string>
+    <string name="abort">Abort</string>
+    <string name="save"> Save</string>
+    <string name="matrix_unnamed">Unnamed</string>
+    <string name="old_pasword">old pasword</string>
+    <string name="new_pasword">new pasword</string>
+    <string name="matrixName">Name:</string>
+    <string name="matrixLines">Lines:</string>
+    <string name="matrixColumns">Columns:</string>
+    <string name="update"> update</string>
     <string-array name="indexArray">
         <item>1</item>
         <item>2</item>

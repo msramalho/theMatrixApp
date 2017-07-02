@@ -1,8 +1,7 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.support.v7.app.AlertDialog;
@@ -14,8 +13,6 @@ import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -44,11 +41,6 @@ public class UpdateMatrix extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Remove title bar
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        //Remove notification bar
-        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_update_matrix);
 
@@ -56,6 +48,24 @@ public class UpdateMatrix extends AppCompatActivity {
         matrixName = (EditText) findViewById(R.id.matrixName);
         lines = (EditText) findViewById(R.id.lines);
         columns = (EditText) findViewById(R.id.columns);
+        matrix = (LinearLayout) findViewById(R.id.matrix);
+
+        //get values from intent: id, action update, passkey
+        Intent i = getIntent();
+        long matrixId = i.getLongExtra("matrixId", 0);
+        update = i.getBooleanExtra("update", false);
+        passkey = i.getStringExtra("passkey");
+
+        mDbHelper = new MatrixDatabase(UpdateMatrix.this);
+        db = mDbHelper.getReadableDatabase();
+        if(update){//read matrix from db
+            m = Matrix.getMatrixById(db, matrixId);
+            matrixName.setText(m.name);
+            lines.setText(String.valueOf(m.lines));
+            columns.setText(String.valueOf(m.columns));
+        }else{
+            m = new Matrix();
+        }
 
         lines.addTextChangedListener(new TextWatcher() {
             @Override
@@ -99,26 +109,10 @@ public class UpdateMatrix extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        //get values from intent: id, action update, passkey
-        Intent i = getIntent();
-        long matrixId = i.getLongExtra("matrixId", 0);
-        update = i.getBooleanExtra("update", false);
-        passkey = i.getStringExtra("passkey");
 
-        mDbHelper = new MatrixDatabase(UpdateMatrix.this);
-        db = mDbHelper.getReadableDatabase();
-        if(update){//read matrix from db
-            m = Matrix.getMatrixById(db, matrixId);
-            matrixName.setText(m.name);
-            lines.setText(m.lines);
-            columns.setText(m.columns);
-        }else{
-            m = new Matrix();
-        }
-
-        matrix = (LinearLayout) findViewById(R.id.matrix);
-
-        drawMatrix();
+        drawMatrix(update);//if update focus on first matrix number
+        if(!update)//if this is a new matrix focus on the name
+            matrixName.requestFocus();
     }
 
     private void drawMatrix() {drawMatrix(true);}
@@ -168,7 +162,6 @@ public class UpdateMatrix extends AppCompatActivity {
                 EditText text = new EditText(this);
                 text.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT));
                 text.setHint("000");
-                text.setText("666");
                 text.setInputType(InputType.TYPE_CLASS_NUMBER);
                 text.setFilters(new InputFilter[] {new InputFilter.LengthFilter(3)});//max size
                 layout.addView(text);
@@ -188,29 +181,44 @@ public class UpdateMatrix extends AppCompatActivity {
     }
 
     public void updateMatrix(View view) {
-        String matrixString = getStringFromMatrix();
-        m.value = Matrix.encrypt(passkey, matrixString);
+        final String matrixString = getStringFromMatrix();
+        m.name = matrixName.getText().toString();//save the new name before updating the db
 
-
-        if(matrixString.length() != m.getTotalChars()){//8*8*3
-            Toast.makeText(this, "Incomplete matrix (" + matrixString.length() + "/"+ m.getTotalChars()+")", Toast.LENGTH_SHORT).show();
-        }else{//save the matrix, valid data
-            if(update){//prompt the user
+        if(update){//update name and/or matrix
+            if(matrixString.length() != m.getTotalChars()){//incomplete data inserted
+                Toast.makeText(this, "Updating matrix name to " + m.name, Toast.LENGTH_SHORT).show();
+                m.updateMatrix(db);
+                goToList();
+            }else{//all is filled - update matrix and name
                 new AlertDialog.Builder(this)
-                    .setTitle("Confirmation")
-                    .setMessage("Do you really want to replace the matrix?")
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int whichButton) {
-                            m.updateMatrix(db);
-                            finish();
-                        }})
-                    .setNegativeButton(android.R.string.no, null).show();
-            }else{//insert new matrix
+                .setTitle("Confirmation")
+                .setMessage("Do you really want to replace the matrix?")
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    m.value = Matrix.encrypt(passkey, matrixString);
+                    m.updateMatrix(db);
+                    goToList();
+                }})
+                .setNegativeButton(android.R.string.no, null).show();
+            }
+        }else{//insert new matrix
+            if(matrixString.length() != m.getTotalChars()){//incomplete data inserted
+                Toast.makeText(this, "Incomplete matrix (" + matrixString.length() + "/"+ m.getTotalChars()+")", Toast.LENGTH_SHORT).show();
+            }else{//all is ready - insert new matrix
+                m.value = Matrix.encrypt(passkey, matrixString);
                 m.insertMatrix(db);
-                finish();
+                goToList();
             }
         }
+    }
+
+    private void goToList(){
+        Intent intent = new Intent(this, MatrixList.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra("passkey", passkey);
+        startActivity(intent);
+        finish(); // call this to finish the current activity
     }
 
     public void abortUpdate(View view) {

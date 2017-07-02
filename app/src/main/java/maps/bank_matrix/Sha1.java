@@ -1,4 +1,4 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;

@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="maps.matrix.UpdateMatrix"
+    tools:context="maps.bank_matrix.UpdateMatrix"
     android:orientation="vertical"
     >
 
@@ -16,13 +16,13 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="horizontal"
-        android:padding="@dimen/textPadding">
+        >
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="@dimen/textMedium"
             android:padding="@dimen/textPadding"
-            android:text="Name: "
+            android:text="@string/matrixName"
             />
 
         <EditText
@@ -39,13 +39,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="@dimen/textPadding">
+        android:orientation="horizontal">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="@dimen/textPadding"
-            android:text="Lines: "
+            android:text="@string/matrixLines"
             />
 
         <EditText
@@ -63,7 +62,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="@dimen/textPadding"
-            android:text="Columns"
+            android:text="@string/matrixColumns"
             />
 
         <EditText
@@ -117,7 +116,7 @@
             android:backgroundTint="@color/colorPrimary"
             android:drawableLeft="@drawable/ic_clear_black_20dp"
             android:onClick="abortUpdate"
-            android:text="Abort"
+            android:text="@string/abort"
             android:textSize="14sp" />
 
         <Button
@@ -129,7 +128,7 @@
             android:drawableLeft="@drawable/ic_input_black_24dp"
             android:elevation="0dp"
             android:onClick="updateMatrix"
-            android:text=" Update"
+            android:text="@string/save"
             android:textSize="16sp" />
 
     </LinearLayout>

@@ -1,4 +1,4 @@
-package maps.matrix;
+package maps.bank_matrix;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
