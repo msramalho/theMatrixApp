@@ -1,14 +1,18 @@
 package maps.matrix;
 
-import android.provider.Settings;
+import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import database.Matrix;
+import database.MatrixDatabase;
+
 
 public class MatrixActivity extends AppCompatActivity {
 
@@ -17,21 +21,39 @@ public class MatrixActivity extends AppCompatActivity {
     private Spinner sp31, sp32, sp33;
     private TextView tv1, tv2, tv3;
 
-    private String[][] matrix = {
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"},
-            {"000","000","000","000","000","000","000","000"}
-    };
+    private String passkey;
 
+    private String[][] matrix;
+    private Matrix m;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_matrix);
+
+
+        MatrixDatabase mDbHelper = new MatrixDatabase(MatrixActivity.this);
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        Intent i = getIntent();
+        long matrixId = i.getLongExtra("matrixId", 0);
+        passkey = i.getStringExtra("passkey");
+
+        m = Matrix.getMatrixById(db, matrixId);
+
+        if(m == null || !m.validMatrix()){
+            Toast.makeText(this, "Matrix not set", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+        matrix = m.getMatrix(passkey);
+
+        /*MatrixEncryption me = new MatrixEncryption(this, passkey);
+
+        if(!me.validMatrix()){
+            Toast.makeText(this, "Matrix not set", Toast.LENGTH_SHORT).show();
+            updateMatrix(null);
+        }else{
+            matrix = me.getMatrix();
+        }*/
 
         //initialize the spinners
         sp11 = (Spinner) findViewById(R.id.cell11);
@@ -115,5 +137,13 @@ public class MatrixActivity extends AppCompatActivity {
         tv1.setText("");
         tv2.setText("");
         tv3.setText("");
+    }
+
+    public void updateMatrix(View view) {
+        Intent intentMatrix =  new Intent(this, UpdateMatrix.class);
+        intentMatrix.putExtra("passkey", passkey);
+        intentMatrix.putExtra("matrixId", m.id);
+        intentMatrix.putExtra("update", true);
+        startActivity(intentMatrix);
     }
 }

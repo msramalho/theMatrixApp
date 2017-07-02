@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Matrix</string>
+    <string name="no_matrix_added">No Matrix added so far</string>
+    <string name="eight">8</string>
     <string-array name="lettersArray">
         <item>A</item>
         <item>B</item>

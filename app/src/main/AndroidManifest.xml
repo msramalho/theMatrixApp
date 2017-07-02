@@ -11,16 +11,16 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
-            android:windowSoftInputMode = "stateVisible"
-            >
-
+            android:windowSoftInputMode="stateVisible">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MatrixActivity"></activity>
+        <activity android:name=".MatrixActivity" />
+        <activity android:name=".UpdateMatrix" />
+        <activity android:name=".MatrixList"></activity>
     </application>
 
 </manifest>

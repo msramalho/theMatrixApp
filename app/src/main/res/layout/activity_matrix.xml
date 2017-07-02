@@ -8,11 +8,22 @@
     tools:context="maps.matrix.MatrixActivity"
     android:orientation="vertical"
     android:layout_margin="10dp"
-    android:paddingTop="60dp"
     android:paddingBottom="60dp"
     android:paddingLeft="20dp"
     android:paddingRight="20dp"
     >
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_gravity="center"
+        android:layout_weight="0.60"
+        android:backgroundTint="@color/colorPrimary"
+        android:drawableLeft="@drawable/ic_input_black_24dp"
+        android:onClick="updateMatrix"
+        android:text="  update"
+        android:textSize="12sp" />
 
     <TextView
         android:layout_width="match_parent"
@@ -20,6 +31,7 @@
         android:layout_weight="1"
         android:textSize="20sp"
         android:textAlignment="center"
+        android:gravity="center_vertical"
         android:text="You think that's air you're breathing?"/>
 
     <LinearLayout
@@ -151,8 +163,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/clear_btn"

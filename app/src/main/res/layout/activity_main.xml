@@ -13,22 +13,44 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toTopOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/go_btn"
+        app:layout_constraintTop_toBottomOf="@+id/myll"
         android:hint="password"
         android:inputType="numberPassword"
         app:layout_constraintVertical_bias="0.374"
         android:textAlignment="center"
         />
 
-    <Button
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:id="@+id/myll"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintTop_toBottomOf="parent"
-        android:id="@+id/go_btn"
-        android:text="Go"
-        android:onClick="advanceToMatrix"/>
+        >
 
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/chg_pass"
+            android:text="Change"
+            android:onClick="resetPassword"
+            android:layout_marginRight="20dp"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/go_btn"
+            android:text="Go"
+            android:onClick="advanceToMatrix"
+            android:layout_marginLeft="20dp"/>
+
+
+    </LinearLayout>
 </android.support.constraint.ConstraintLayout>
