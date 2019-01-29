@@ -12,9 +12,18 @@ Available on [Play Store](https://play.google.com/store/apps/details?id=maps.ban
 * After writing the original matrix, only 3 positions can be seen at a time, like real banks
 
 
----
 
-<h3 align="center">Description From Play Store</h3>
+
+
+
+<h2 align="center">Description From Play Store</h2>
+
+<p align="center">
+  <img align="" width="200px" src="https://lh3.googleusercontent.com/YPNaREm1y4MnZbQaSohi850mSmaIxVrPog0lMCUNsUNC-WjilxuDpMMvWYisIzMruPs=w1440-h620-rw"/>
+  <img align="" width="200px" src="https://lh3.googleusercontent.com/sSLF7JFkSaw2qa2JbUD1AI2HD_gTAG4vRLVArrrg8SSL97qejEF0ZD9alJcnMj0bz6s=w1440-h620-rw"/>
+  <img align="" width="200px" src="https://lh3.googleusercontent.com/QsJX560cqTN3y8sx9x1eOFfS2Hc7-0m-qLJWtqDfuIydLHkdGiHrWXFOCqiRrEUHsDw=w1440-h620-rw"/>
+  <img align="" width="200px" src="https://lh3.googleusercontent.com/Awui9raw3G4Y72bzJpvlRVwTNRbJTvKG7rKfKCZN57bUOomlgqkH7MplVq7qb_0c=w1440-h620-rw"/>
+</p>
 
 Keep your bank matrix or matrices in one secure place - your phone. Stop hiding your paper copies from thieves. With Matrix you don't even need to remember to bring anything just because you'll need to make a transaction.
 
