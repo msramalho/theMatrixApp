@@ -11,33 +11,30 @@ import java.util.ArrayList;
 import database.Matrix;
 import database.MatrixDatabase;
 
-public class Preferences {
-    private final String PREFS_NAME = "matrixPreferences";
-    private final String PASSWORD_NAME = "passwordInMyPreferencesMatrixed";
-    //private final String MATRIX_NAME = "matrixInMyPreferencesMatrixed";//
-
+class Preferences {
     private Context myContext;
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
 
-    public Preferences(Context c) {
+    Preferences(Context c) {
         myContext = c;
+        String PREFS_NAME = "matrixPreferences";
         prefs = myContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         editor = prefs.edit();
-        editor.commit();
+        editor.apply();
     }
 
-    private String getString(String key){
-        return prefs.getString(key, "");
+    private String getString() {
+        return prefs.getString("passwordInMyPreferencesMatrixed", "");
     }
 
-//password
-    public boolean isPasswordDefined(){
-        return getString(PASSWORD_NAME).length()>0;
+    //password
+    boolean isPasswordDefined() {
+        return getString().length() > 0;
     }
 
-    public boolean changePassword(String oldP, String newP){
-        if(newP.length() > 0 && validatePassword(oldP)){
+    boolean changePassword(String oldP, String newP) {
+        if (newP.length() > 0 && validatePassword(oldP)) {
             Sha1 sha1 = new Sha1(newP);
             try {
                 //first update all the matrices to be encrypted using the new password
@@ -45,59 +42,46 @@ public class Preferences {
                 SQLiteDatabase db = mDbHelper.getReadableDatabase();
                 ArrayList<Matrix> matrices = Matrix.getAll(db);
 
-                for(Matrix m: matrices){
+                for (Matrix m : matrices) {
                     m.decryptEncrypt(oldP, newP);//re-encrypt the matrix
                     m.updateMatrix(db);//update it in the database
                 }
                 //then save the new password
+                String PASSWORD_NAME = "passwordInMyPreferencesMatrixed";
                 editor.putString(PASSWORD_NAME, sha1.hash());
                 editor.commit();
                 return true;
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (UnsupportedEncodingException e) {
+            } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
         }
         return false;
     }
 
-    public boolean validatePassword(String userInput) {//attempts constant time, but compilers...
+    boolean validatePassword(String userInput) {//attempts constant time, but compilers...
         Sha1 attemptHash = new Sha1(userInput);
-        String attempt = "";
+        String attempt;
         try {
             attempt = attemptHash.hash();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return false;
-        } catch (UnsupportedEncodingException e) {
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
             e.printStackTrace();
             return false;
         }
 
-        String real = getString(PASSWORD_NAME);
+        String real = getString();
 
-        if (real == "")//never set before
+        if (real.equals(""))//never set before
             return true;
 
-        if (attempt.length() != real.length()){
+        if (attempt.length() != real.length())
             return false;
-        }
 
         int delta = 0;
-        for (int i = 0;i < attempt.length(); i++){
+        for (int i = 0; i < attempt.length(); i++) {
             delta += attempt.charAt(i) ^ real.charAt(i);
         }
 
         return delta == 0;
     }
 
-//matrix
-    /*public String getMatrix(){
-        return getString(MATRIX_NAME);
-    }
-    public void updateMatrix(String newMatrix){
-        editor.putString(MATRIX_NAME, newMatrix);
-        editor.commit();
-    }*/
 }

@@ -22,18 +22,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-        password = (EditText) findViewById(R.id.password);
+        password = findViewById(R.id.password);
 
-        password.setOnKeyListener(new View.OnKeyListener(){//code to make keyboard enter be the same as button click
-            public boolean onKey(View v, int keyCode, KeyEvent event){
-                if (event.getAction() == KeyEvent.ACTION_DOWN){
-                    if(keyCode == KeyEvent.KEYCODE_ENTER){
-                        advanceToMatrix(findViewById(R.id.go_btn));
-                        return true;
-                    }
+        //code to make keyboard enter be the same as button click
+        password.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == KeyEvent.ACTION_DOWN){
+                if(keyCode == KeyEvent.KEYCODE_ENTER){
+                    advanceToMatrix(findViewById(R.id.go_btn));
+                    return true;
                 }
-                return false;
             }
+            return false;
         });
     }
 
@@ -83,9 +82,9 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton("Go", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    Dialog dialogObj =Dialog.class.cast(dialog);
-                    EditText oldEt = (EditText) dialogObj.findViewById(R.id.oldP);
-                    EditText newEt = (EditText) dialogObj.findViewById(R.id.newP);
+                    Dialog dialogObj = (Dialog) dialog;
+                    EditText oldEt = dialogObj.findViewById(R.id.oldP);
+                    EditText newEt = dialogObj.findViewById(R.id.newP);
 
                     changePassword(oldEt.getText().toString(), newEt.getText().toString());
                 }
