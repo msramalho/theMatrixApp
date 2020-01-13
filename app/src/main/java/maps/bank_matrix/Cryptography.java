@@ -94,7 +94,7 @@ public class Cryptography {
     public String decrypt(String toDecrypt) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         String[] parts = toDecrypt.split(SEPARATOR);
         if (parts.length != 2)
-            throw new AssertionError("String to decrypt mus be of the form: 'BASE64_DATA" + SEPARATOR + "BASE64_IV'");
+            throw new AssertionError("String to decrypt must be of the form: 'BASE64_DATA" + SEPARATOR + "BASE64_IV'");
         byte[] encrypted = Base64.decode(parts[0], Base64.DEFAULT),
                 iv = Base64.decode(parts[1], Base64.DEFAULT);
         final Cipher cipher = Cipher.getInstance(TRANSFORMATION);
