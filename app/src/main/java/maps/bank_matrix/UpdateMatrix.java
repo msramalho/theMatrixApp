@@ -19,12 +19,17 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import database.Matrix;
@@ -205,8 +210,9 @@ public class UpdateMatrix extends AppCompatActivity {
                         .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
 
                             try {
-                                m.value = Matrix.encryptString(matrixString);
-                            } catch (NoSuchAlgorithmException | NoSuchPaddingException | UnrecoverableKeyException | CertificateException | KeyStoreException | IOException e) {
+                                Cryptography cryptography = new Cryptography(Matrix.KEY_NAME);
+                                m.value = cryptography.encrypt(matrixString);
+                            } catch (NoSuchAlgorithmException | NoSuchPaddingException | CertificateException | KeyStoreException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
                                 e.printStackTrace();
                                 Toast.makeText(getApplicationContext(), "Unable to update matrix: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                 return;
@@ -221,8 +227,9 @@ public class UpdateMatrix extends AppCompatActivity {
                 Toast.makeText(this, "Incomplete matrix (" + matrixString.length() + "/" + m.getTotalChars() + ")", Toast.LENGTH_SHORT).show();
             } else {//all is ready - insert new matrix
                 try {
-                    m.value = Matrix.encryptString(matrixString);
-                } catch (NoSuchAlgorithmException | NoSuchPaddingException | UnrecoverableKeyException | CertificateException | KeyStoreException | IOException e) {
+                    Cryptography cryptography = new Cryptography(Matrix.KEY_NAME);
+                    m.value = cryptography.encrypt(matrixString);
+                } catch (NoSuchAlgorithmException | NoSuchPaddingException | CertificateException | KeyStoreException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
                     e.printStackTrace();
                     Toast.makeText(getApplicationContext(), "Unable to insert matrix: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     return;

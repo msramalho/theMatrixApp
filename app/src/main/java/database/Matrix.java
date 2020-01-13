@@ -4,40 +4,29 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyProperties;
 import android.util.Base64;
-import android.util.Log;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PipedOutputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import database.MatrixReader.MatrixEntry;
+import maps.bank_matrix.Cryptography;
 import maps.bank_matrix.R;
 
 public class Matrix {
@@ -46,12 +35,7 @@ public class Matrix {
     public String value;
     public int lines, columns;
     public static String KEY_NAME = "KeyNameAuthMatrixed";
-    public static int VALIDITY_DURATION = 3600;
 
-    // initialization can be random due to low probability of collision in bank matrices
-    // https://stackoverflow.com/questions/8041451/good-aes-initialization-vector-practice
-    private static byte[] iv = {7, 2, 5, 42, 6, 2, 5, 6, 9, 3, 9, 1, 8, 9, 2, 7};
-    private static IvParameterSpec ivspec = new IvParameterSpec(iv);
 
     public Matrix() {
         this(0, "", "", 8, 8);
@@ -185,9 +169,10 @@ public class Matrix {
         return lines + " x " + columns;
     }
 
-    public String[][] getMatrix() throws NoSuchPaddingException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
+    public String[][] getMatrix() throws NoSuchPaddingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, NoSuchProviderException, InvalidAlgorithmParameterException, BadPaddingException, InvalidKeyException, IllegalBlockSizeException {
+        Cryptography cryptography = new Cryptography(KEY_NAME);
         String[][] result = new String[lines][columns];
-        String myMatrix = decryptString(value);
+        String myMatrix = cryptography.decrypt(value);
         if (myMatrix.length() != lines * columns * 3)
             return result;
         int k = 0;
@@ -207,10 +192,11 @@ public class Matrix {
 
     //Encryption functions
 
-    public void decryptEncryptNewAuth(String oldPasskey) throws NoSuchPaddingException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
+    public void decryptEncryptNewAuth(String oldPasskey) throws NoSuchPaddingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, NoSuchProviderException, InvalidAlgorithmParameterException, BadPaddingException, InvalidKeyException, IllegalBlockSizeException {
+        Cryptography cryptography = new Cryptography(KEY_NAME);
         String temp = value;
-        temp = Matrix.decrypt(oldPasskey, temp);
-        temp = Matrix.encryptString(temp);
+        temp = Matrix.legacyDecrypt(oldPasskey, temp);
+        temp = cryptography.encrypt(temp);
         value = temp;
     }
 
@@ -219,9 +205,9 @@ public class Matrix {
         return value.length() > 0;
     }
 
-    private static String decrypt(String passkey, String matrixString) {
+    private static String legacyDecrypt(String passkey, String matrixString) {
         try {
-            return decryptMsg(passkey, matrixString);
+            return legacyDecryptMsg(passkey, matrixString);
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
             e.printStackTrace();
             System.out.println("ERROR DECRYPTING: " + e.getMessage());
@@ -230,15 +216,15 @@ public class Matrix {
     }
 
 
-    private static String decryptMsg(String passkey, String cipherTextString) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    private static String legacyDecryptMsg(String passkey, String cipherTextString) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         byte[] cipherText = Base64.decode(cipherTextString, Base64.DEFAULT);
         Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.DECRYPT_MODE, getSecretFromKey(passkey));
+        cipher.init(Cipher.DECRYPT_MODE, legacyGetSecretFromKey(passkey));
         return new String(cipher.doFinal(cipherText), StandardCharsets.UTF_8);
     }
 
 
-    private static SecretKeySpec getSecretFromKey(String passkey) {
+    private static SecretKeySpec legacyGetSecretFromKey(String passkey) {
         byte[] key;
         MessageDigest sha;
         try {
@@ -256,57 +242,4 @@ public class Matrix {
     public int getTotalChars() {
         return 3 * lines * columns;
     }
-
-    public static void generateSecretKey(KeyGenParameterSpec keyGenParameterSpec) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyGenerator keyGenerator;
-        keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
-
-        keyGenerator.init(keyGenParameterSpec);
-        keyGenerator.generateKey();
-    }
-
-    private static SecretKey getSecretKey() throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
-        KeyStore keyStore;
-        keyStore = KeyStore.getInstance("AndroidKeyStore");
-
-        // Before the keystore can be accessed, it must be loaded.
-        keyStore.load(null);
-        return ((SecretKey) keyStore.getKey(KEY_NAME, null));
-    }
-
-    private static Cipher getCipher() throws NoSuchPaddingException, NoSuchAlgorithmException {
-        return Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
-                + KeyProperties.BLOCK_MODE_CBC + "/"
-                + KeyProperties.ENCRYPTION_PADDING_PKCS7);
-    }
-
-
-    public static String encryptString(String toEncrypt) throws NoSuchAlgorithmException, NoSuchPaddingException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException {
-        Cipher cipher = Matrix.getCipher();
-        SecretKey secretKey = Matrix.getSecretKey();
-        try {
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, Matrix.ivspec);
-            return Arrays.toString(cipher.doFinal(toEncrypt.getBytes(Charset.defaultCharset())));
-        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
-            Log.e("matrix", "Key is invalid in encryption." + e.getMessage());
-            System.exit(1);
-        }
-        return "";
-    }
-
-    private String decryptString(String toDecrypt) throws NoSuchAlgorithmException, NoSuchPaddingException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException {
-        // Exceptions are unhandled for getCipher() and getSecretKey().
-        Cipher cipher = Matrix.getCipher();
-        SecretKey secretKey = Matrix.getSecretKey();
-
-        try {
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, Matrix.ivspec);
-            return Arrays.toString(cipher.doFinal(toDecrypt.getBytes(Charset.defaultCharset())));
-        } catch (InvalidKeyException | InvalidAlgorithmParameterException | BadPaddingException | IllegalBlockSizeException e) {
-            Log.e("matrix", "Key is invalid: " + e.getMessage());
-            System.exit(1);
-        }
-        return "";
-    }
-
 }

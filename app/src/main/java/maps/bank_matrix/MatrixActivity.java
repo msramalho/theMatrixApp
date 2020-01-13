@@ -12,12 +12,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import database.Matrix;
@@ -38,32 +43,25 @@ public class MatrixActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_matrix);
 
-        Log.d("test", "Here0");
         MatrixDatabase mDbHelper = new MatrixDatabase(MatrixActivity.this);
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        Log.d("test", "Here1");
         Intent i = getIntent();
         long matrixId = i.getLongExtra("matrixId", 0);
 
-        Log.d("test", "Here2");
         m = Matrix.getMatrixById(db, matrixId);
 
-        Log.d("test", "Here3");
         if(m == null || !m.validMatrix()){
             Toast.makeText(this, "Matrix not set", Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        Log.d("test", "Here4");
         try {
             matrix = m.getMatrix();
-        } catch (NoSuchPaddingException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
             e.printStackTrace();
             Toast.makeText(getApplicationContext(), "Failed to decrypt: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-
-        Log.d("test", "Here5");
 
         TextView matrixName = findViewById(R.id.matrixName);
         matrixName.setText(m.name);

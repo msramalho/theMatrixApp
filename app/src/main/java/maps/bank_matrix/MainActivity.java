@@ -4,8 +4,6 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyProperties;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -20,6 +18,7 @@ import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -29,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import database.Matrix;
@@ -46,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         executor = ContextCompat.getMainExecutor(this);
         MatrixDatabase mDbHelper = new MatrixDatabase(this);
         db = mDbHelper.getReadableDatabase();
@@ -63,12 +63,6 @@ public class MainActivity extends AppCompatActivity {
         biometricPrompt = new BiometricPrompt(MainActivity.this, executor,
                 new BiometricPrompt.AuthenticationCallback() {
                     @Override
-                    public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                        super.onAuthenticationError(errorCode, errString);
-                        Toast.makeText(getApplicationContext(), "Authentication error: " + errString, Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
                     public void onAuthenticationFailed() {
                         super.onAuthenticationFailed();
                         Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
@@ -78,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
                     public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                         super.onAuthenticationSucceeded(result);
                         Toast.makeText(getApplicationContext(), "Authentication succeeded!", Toast.LENGTH_SHORT).show();
-                        trySecretKeyGeneration();
                         advanceToMatrix();
                     }
 
@@ -130,13 +123,6 @@ public class MainActivity extends AppCompatActivity {
         biometricPrompt = new BiometricPrompt(MainActivity.this, executor,
                 new BiometricPrompt.AuthenticationCallback() {
                     @Override
-                    public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                        super.onAuthenticationError(errorCode, errString);
-                        Toast.makeText(getApplicationContext(), "Authentication error: " + errString, Toast.LENGTH_SHORT).show();
-                        biometricPrompt.authenticate(promptInfo);
-                    }
-
-                    @Override
                     public void onAuthenticationFailed() {
                         super.onAuthenticationFailed();
                         Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
@@ -147,12 +133,11 @@ public class MainActivity extends AppCompatActivity {
                     public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                         super.onAuthenticationSucceeded(result);
                         Toast.makeText(getApplicationContext(), "Authentication succeeded!", Toast.LENGTH_SHORT).show();
-                        trySecretKeyGeneration();
                         ArrayList<Matrix> matrices = Matrix.getAll(db);
                         for (Matrix matrix : matrices) {
                             try {
                                 matrix.decryptEncryptNewAuth(oldpass);//re-encrypt the matrix
-                            } catch (NoSuchPaddingException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
+                            } catch (NoSuchPaddingException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
                                 e.printStackTrace();
                                 Toast.makeText(getApplicationContext(), "Unexpected error", Toast.LENGTH_SHORT).show();
                                 System.exit(1);
@@ -169,31 +154,12 @@ public class MainActivity extends AppCompatActivity {
 
 
         promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("New Biometric Login")
-                .setSubtitle("Log in using your biometric credential")
+                .setTitle("Setup Biometric Login")
+                .setSubtitle("Log in using your biometric credentials")
                 .setDeviceCredentialAllowed(true)
                 .build();
 
         biometricPrompt.authenticate(promptInfo);
     }
-
-    private void trySecretKeyGeneration() {
-        try {
-            Matrix.generateSecretKey(new KeyGenParameterSpec.Builder(
-                    Matrix.KEY_NAME,
-                    KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                    .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
-                    .setUserAuthenticationRequired(true)
-                    .setUserAuthenticationValidityDurationSeconds(Matrix.VALIDITY_DURATION)
-                    .setRandomizedEncryptionRequired(false)
-                    .build());
-        } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-            Toast.makeText(getApplicationContext(), "Unexpected error", Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-            System.exit(1);
-        }
-    }
-
 }
 

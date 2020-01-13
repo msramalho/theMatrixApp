@@ -48,7 +48,6 @@ public class MatrixList extends AppCompatActivity {
             Intent intentMatrixDetails =  new Intent(MatrixList.this, MatrixActivity.class);
             intentMatrixDetails.putExtra("matrixId", matrices.get(position).id);
             intentMatrixDetails.putExtra("update", true);
-            Log.d("wut", "here001");
             startActivity(intentMatrixDetails);
         });
         //long click --> prompt delete
