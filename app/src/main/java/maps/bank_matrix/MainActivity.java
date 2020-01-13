@@ -22,7 +22,6 @@ import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -120,46 +119,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getNewAuthAfterLegacy(String oldpass) {
-        biometricPrompt = new BiometricPrompt(MainActivity.this, executor,
-                new BiometricPrompt.AuthenticationCallback() {
-                    @Override
-                    public void onAuthenticationFailed() {
-                        super.onAuthenticationFailed();
-                        Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
-                        biometricPrompt.authenticate(promptInfo);
-                    }
+        Toast.makeText(getApplicationContext(), "Authentication succeeded!", Toast.LENGTH_SHORT).show();
+        ArrayList<Matrix> matrices = Matrix.getAll(db);
+        for (Matrix matrix : matrices) {
+            try {
+                matrix.decryptEncryptNewAuth(oldpass);//re-encrypt the matrix
+            } catch (NoSuchPaddingException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
+                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "Unexpected error", Toast.LENGTH_SHORT).show();
+                System.exit(1);
+            }
+        }
 
-                    @Override
-                    public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                        super.onAuthenticationSucceeded(result);
-                        Toast.makeText(getApplicationContext(), "Authentication succeeded!", Toast.LENGTH_SHORT).show();
-                        ArrayList<Matrix> matrices = Matrix.getAll(db);
-                        for (Matrix matrix : matrices) {
-                            try {
-                                matrix.decryptEncryptNewAuth(oldpass);//re-encrypt the matrix
-                            } catch (NoSuchPaddingException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
-                                e.printStackTrace();
-                                Toast.makeText(getApplicationContext(), "Unexpected error", Toast.LENGTH_SHORT).show();
-                                System.exit(1);
-                            }
-                        }
+        for (Matrix matrix : matrices)
+            matrix.updateMatrix(db);//update it in the database
 
-                        for (Matrix matrix : matrices)
-                            matrix.updateMatrix(db);//update it in the database
-
-                        preferences.deletePassword();
-                        Toast.makeText(getApplicationContext(), "Success in re-encrypting your data. Please restart.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-
-        promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Setup Biometric Login")
-                .setSubtitle("Log in using your biometric credentials")
-                .setDeviceCredentialAllowed(true)
-                .build();
-
-        biometricPrompt.authenticate(promptInfo);
+        preferences.deletePassword();
+        Toast.makeText(getApplicationContext(), "Success in re-encrypting your data. Please restart.", Toast.LENGTH_SHORT).show();
     }
 }
 
