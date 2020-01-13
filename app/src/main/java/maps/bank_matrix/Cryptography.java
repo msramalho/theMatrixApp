@@ -33,7 +33,6 @@ public class Cryptography {
     private static final String TRANSFORMATION = KeyProperties.KEY_ALGORITHM_AES + "/" + KeyProperties.BLOCK_MODE_CBC + "/" + KeyProperties.ENCRYPTION_PADDING_PKCS7;
     private static final String ANDROID_KEY_STORE = "AndroidKeyStore";
     private static final String SEPARATOR = ",";
-    private static final Integer TAG_LENGTH = 128;
 
     private String keyName;
     private KeyStore keyStore;
