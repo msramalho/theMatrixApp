@@ -1,19 +1,19 @@
 package maps.bank_matrix;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class Sha1 {
+class Sha1 {
     private String text;
 
-    public Sha1(String text) {
+    Sha1(String text) {
         this.text = text;
     }
 
-    public String hash() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    String hash() throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
-        byte[] textBytes = text.getBytes("UTF-8");
+        byte[] textBytes = text.getBytes(StandardCharsets.UTF_8);
         md.update(textBytes, 0, textBytes.length);
         byte[] sha1hash = md.digest();
         return convertToHex(sha1hash);

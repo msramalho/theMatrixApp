@@ -6,8 +6,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import database.MatrixReader.MatrixEntry;
 
 public class MatrixDatabase extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 1;
-    public static final String DATABASE_NAME = "MatrixDB.db";
+    private static final int DATABASE_VERSION = 1;
+    private static final String DATABASE_NAME = "MatrixDB.db";
 
     private static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE " + MatrixEntry.TABLE_NAME + " (" +

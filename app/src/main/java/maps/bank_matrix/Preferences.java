@@ -2,30 +2,22 @@ package maps.bank_matrix;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-
-import database.Matrix;
-import database.MatrixDatabase;
 
 class Preferences {
-    private Context myContext;
     private SharedPreferences prefs;
-    private SharedPreferences.Editor editor;
-
+    private String KEY_PASS_PREFERENCE = "passwordInMyPreferencesMatrixed";
     Preferences(Context c) {
-        myContext = c;
         String PREFS_NAME = "matrixPreferences";
-        prefs = myContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        editor = prefs.edit();
+        prefs = c.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
         editor.apply();
     }
 
     private String getString() {
-        return prefs.getString("passwordInMyPreferencesMatrixed", "");
+        return prefs.getString(KEY_PASS_PREFERENCE, "");
     }
 
     //password
@@ -33,37 +25,12 @@ class Preferences {
         return getString().length() > 0;
     }
 
-    boolean changePassword(String oldP, String newP) {
-        if (newP.length() > 0 && validatePassword(oldP)) {
-            Sha1 sha1 = new Sha1(newP);
-            try {
-                //first update all the matrices to be encrypted using the new password
-                MatrixDatabase mDbHelper = new MatrixDatabase(myContext);
-                SQLiteDatabase db = mDbHelper.getReadableDatabase();
-                ArrayList<Matrix> matrices = Matrix.getAll(db);
-
-                for (Matrix m : matrices) {
-                    m.decryptEncrypt(oldP, newP);//re-encrypt the matrix
-                    m.updateMatrix(db);//update it in the database
-                }
-                //then save the new password
-                String PASSWORD_NAME = "passwordInMyPreferencesMatrixed";
-                editor.putString(PASSWORD_NAME, sha1.hash());
-                editor.commit();
-                return true;
-            } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
-    }
-
     boolean validatePassword(String userInput) {//attempts constant time, but compilers...
         Sha1 attemptHash = new Sha1(userInput);
         String attempt;
         try {
             attempt = attemptHash.hash();
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+        } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             return false;
         }
@@ -84,4 +51,7 @@ class Preferences {
         return delta == 0;
     }
 
+    void deletePassword() {
+        prefs.edit().remove(KEY_PASS_PREFERENCE).apply();
+    }
 }

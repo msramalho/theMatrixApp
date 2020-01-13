@@ -4,19 +4,37 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 import android.util.Base64;
+import android.util.Log;
 
-import java.io.UnsupportedEncodingException;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PipedOutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import database.MatrixReader.MatrixEntry;
@@ -27,12 +45,19 @@ public class Matrix {
     public String name;
     public String value;
     public int lines, columns;
+    public static String KEY_NAME = "KeyNameAuthMatrixed";
+    public static int VALIDITY_DURATION = 3600;
+
+    // initialization can be random due to low probability of collision in bank matrices
+    // https://stackoverflow.com/questions/8041451/good-aes-initialization-vector-practice
+    private static byte[] iv = {7, 2, 5, 42, 6, 2, 5, 6, 9, 3, 9, 1, 8, 9, 2, 7};
+    private static IvParameterSpec ivspec = new IvParameterSpec(iv);
 
     public Matrix() {
-        this(0,"","",8,8);
+        this(0, "", "", 8, 8);
     }
 
-    public Matrix(long id, String name, String value, int lines, int columns) {
+    private Matrix(long id, String name, String value, int lines, int columns) {
         this.id = id;
         this.name = name;
         this.value = value;
@@ -41,7 +66,7 @@ public class Matrix {
     }
 
 
-    public void insertMatrix(SQLiteDatabase db){
+    public void insertMatrix(SQLiteDatabase db) {
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
         values.put(MatrixEntry.COLUMN_NAME, name);
@@ -53,7 +78,7 @@ public class Matrix {
         id = db.insert(MatrixEntry.TABLE_NAME, null, values);
     }
 
-    public static ArrayList<Matrix> getAll(SQLiteDatabase db){
+    public static ArrayList<Matrix> getAll(SQLiteDatabase db) {
         String[] projection = {
                 MatrixEntry._ID,
                 MatrixEntry.COLUMN_NAME,
@@ -78,13 +103,13 @@ public class Matrix {
 
 
         ArrayList<Matrix> result = new ArrayList<>();
-        while(cursor.moveToNext()) {
+        while (cursor.moveToNext()) {
             Matrix m = new Matrix(
-                cursor.getLong(cursor.getColumnIndexOrThrow(MatrixEntry._ID)),
-                cursor.getString(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_NAME)),
-                cursor.getString(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_VALUE)),
-                cursor.getInt(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_LINES)),
-                cursor.getInt(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_COLUMNS))
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MatrixEntry._ID)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_NAME)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_VALUE)),
+                    cursor.getInt(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_LINES)),
+                    cursor.getInt(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_COLUMNS))
             );
             result.add(m);
         }
@@ -93,7 +118,7 @@ public class Matrix {
         return result;
     }
 
-    public static Matrix getMatrixById(SQLiteDatabase db, long idToLoad){
+    public static Matrix getMatrixById(SQLiteDatabase db, long idToLoad) {
         String[] projection = {
                 MatrixEntry._ID,
                 MatrixEntry.COLUMN_NAME,
@@ -115,7 +140,7 @@ public class Matrix {
                 null,                                       // don't filter by row groups
                 null                                        // The sort order
         );
-        if(cursor.moveToNext()) {
+        if (cursor.moveToNext()) {
             return new Matrix(
                     cursor.getLong(cursor.getColumnIndexOrThrow(MatrixEntry._ID)),
                     cursor.getString(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_NAME)),
@@ -124,10 +149,11 @@ public class Matrix {
                     cursor.getInt(cursor.getColumnIndexOrThrow(MatrixEntry.COLUMN_COLUMNS))
             );
         }
+        cursor.close();
         return null;
     }
 
-    public void deleteMatrix(SQLiteDatabase db){
+    public void deleteMatrix(SQLiteDatabase db) {
         // Define 'where' part of query.
         String selection = MatrixEntry._ID + " = ?";
         // Specify arguments in placeholder order.
@@ -136,7 +162,7 @@ public class Matrix {
         db.delete(MatrixEntry.TABLE_NAME, selection, selectionArgs);
     }
 
-    public int updateMatrix(SQLiteDatabase db){
+    public void updateMatrix(SQLiteDatabase db) {
         // New value for one column
         ContentValues values = new ContentValues();
         values.put(MatrixEntry.COLUMN_NAME, name);
@@ -148,86 +174,67 @@ public class Matrix {
         String selection = MatrixEntry._ID + " = ?";
         String[] selectionArgs = {String.valueOf(id)};
 
-        int count = db.update(
+        db.update(
                 MatrixEntry.TABLE_NAME,
                 values,
                 selection,
                 selectionArgs);
-        return count;
     }
 
     public String getDimensionString() {
         return lines + " x " + columns;
     }
 
-    public String[][] getMatrix(String passkey){
+    public String[][] getMatrix() throws NoSuchPaddingException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
         String[][] result = new String[lines][columns];
-        String myMatrix = decrypt(passkey, value);
-        if(myMatrix.length() != lines*columns*3)
+        String myMatrix = decryptString(value);
+        if (myMatrix.length() != lines * columns * 3)
             return result;
         int k = 0;
-        for(int i = 0; i < lines; i++){
-            for(int j = 0; j < columns; j++){
-                result[i][j] = myMatrix.substring(k,k+3);
-                k+=3;
+        for (int i = 0; i < lines; i++) {
+            for (int j = 0; j < columns; j++) {
+                result[i][j] = myMatrix.substring(k, k + 3);
+                k += 3;
             }
         }
         return result;
     }
 
     public String getName(Context context) {
-        return name.length() == 0? context.getString(R.string.matrix_unnamed):name;
+        return name.length() == 0 ? context.getString(R.string.matrix_unnamed) : name;
     }
 
 
     //Encryption functions
 
-    public void decryptEncrypt(String oldPasskey, String newPasskey){
+    public void decryptEncryptNewAuth(String oldPasskey) throws NoSuchPaddingException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
         String temp = value;
         temp = Matrix.decrypt(oldPasskey, temp);
-        temp = Matrix.encrypt(newPasskey, temp);
+        temp = Matrix.encryptString(temp);
         value = temp;
     }
 
-    public boolean validMatrix(){
-        return value.length()>0;
+
+    public boolean validMatrix() {
+        return value.length() > 0;
     }
 
-    public static String decrypt(String passkey, String matrixString){
+    private static String decrypt(String passkey, String matrixString) {
         try {
             return decryptMsg(passkey, matrixString);
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | UnsupportedEncodingException | IllegalBlockSizeException e) {
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
             e.printStackTrace();
             System.out.println("ERROR DECRYPTING: " + e.getMessage());
         }
         return "";
     }
 
-    public static String encrypt(String passkey, String matrixString){
-        try {
-            return encryptMsg(passkey, matrixString);
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | UnsupportedEncodingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            e.printStackTrace();
-            System.out.println("ERROR ENCRYPTING: " + e.getMessage());
-        }
-        return "";
-    }
 
-
-    private static String encryptMsg(String passkey, String message) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException {
-        //byte[] message64 = Base64.decode(message,Base64.DEFAULT);
-        //SecretKeySpec secret = new SecretKeySpec(secret64, "AES");
-        Cipher cipher  = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, getSecretFromKey(passkey));
-        byte[] encVal = cipher.doFinal(message.getBytes());
-        return Base64.encodeToString(encVal, Base64.DEFAULT);
-    }
-
-    private static String decryptMsg(String passkey, String cipherTextString) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, UnsupportedEncodingException {
+    private static String decryptMsg(String passkey, String cipherTextString) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         byte[] cipherText = Base64.decode(cipherTextString, Base64.DEFAULT);
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, getSecretFromKey(passkey));
-        return new String(cipher.doFinal(cipherText), "UTF-8");
+        return new String(cipher.doFinal(cipherText), StandardCharsets.UTF_8);
     }
 
 
@@ -235,9 +242,9 @@ public class Matrix {
         byte[] key;
         MessageDigest sha;
         try {
-            key = (passkey).getBytes("UTF-8");
+            key = (passkey).getBytes(StandardCharsets.UTF_8);
             sha = MessageDigest.getInstance("SHA-1");
-        } catch (UnsupportedEncodingException  | NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             return null;
         }
@@ -248,6 +255,58 @@ public class Matrix {
 
     public int getTotalChars() {
         return 3 * lines * columns;
+    }
+
+    public static void generateSecretKey(KeyGenParameterSpec keyGenParameterSpec) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyGenerator keyGenerator;
+        keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+
+        keyGenerator.init(keyGenParameterSpec);
+        keyGenerator.generateKey();
+    }
+
+    private static SecretKey getSecretKey() throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException {
+        KeyStore keyStore;
+        keyStore = KeyStore.getInstance("AndroidKeyStore");
+
+        // Before the keystore can be accessed, it must be loaded.
+        keyStore.load(null);
+        return ((SecretKey) keyStore.getKey(KEY_NAME, null));
+    }
+
+    private static Cipher getCipher() throws NoSuchPaddingException, NoSuchAlgorithmException {
+        return Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
+                + KeyProperties.BLOCK_MODE_CBC + "/"
+                + KeyProperties.ENCRYPTION_PADDING_PKCS7);
+    }
+
+
+    public static String encryptString(String toEncrypt) throws NoSuchAlgorithmException, NoSuchPaddingException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException {
+        Cipher cipher = Matrix.getCipher();
+        SecretKey secretKey = Matrix.getSecretKey();
+        try {
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, Matrix.ivspec);
+            return Arrays.toString(cipher.doFinal(toEncrypt.getBytes(Charset.defaultCharset())));
+        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+            Log.e("matrix", "Key is invalid in encryption." + e.getMessage());
+            System.exit(1);
+        }
+        return "";
+    }
+
+    private String decryptString(String toDecrypt) throws NoSuchAlgorithmException, NoSuchPaddingException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException {
+        // Exceptions are unhandled for getCipher() and getSecretKey().
+        Cipher cipher = Matrix.getCipher();
+        SecretKey secretKey = Matrix.getSecretKey();
+
+        try {
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, Matrix.ivspec);
+            return Arrays.toString(cipher.doFinal(toDecrypt.getBytes(Charset.defaultCharset())));
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException | BadPaddingException | IllegalBlockSizeException e) {
+            Log.e("matrix", "Key is invalid: " + e.getMessage());
+            System.exit(1);
+        }
+        return "";
     }
 
 }

@@ -8,7 +8,7 @@ public class CustomTextWatcher implements TextWatcher {
 
     private EditText previous, current, next;
     private int previousSize = 0;
-    public CustomTextWatcher(EditText previous, EditText current, EditText next) {
+    CustomTextWatcher(EditText previous, EditText current, EditText next) {
         this.previous = previous;
         this.current = current;
         this.next = next;
