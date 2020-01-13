@@ -6,7 +6,6 @@ import android.util.Base64;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
@@ -22,7 +21,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 
 /**
@@ -58,6 +56,7 @@ public class Cryptography {
     private void getKey() {
         try {
             final KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore.getEntry(keyName, null);
+            // if no key was found -> generate new
             if (secretKeyEntry != null) secretKey = secretKeyEntry.getSecretKey();
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableEntryException e) {
             // failed to retrieve -> will generate new
@@ -67,15 +66,12 @@ public class Cryptography {
 
     private void generateKey() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         final KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE);
-
         final KeyGenParameterSpec keyGenParameterSpec =
                 new KeyGenParameterSpec.Builder(
                         keyName,
                         KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                         .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
                         .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
-                        //.setUserAuthenticationRequired(true)
-                        //.setUserAuthenticationValidityDurationSeconds(this.validity)
                         .build();
         keyGenerator.init(keyGenParameterSpec);
         secretKey = keyGenerator.generateKey();
@@ -97,11 +93,8 @@ public class Cryptography {
         byte[] encrypted = Base64.decode(parts[0], Base64.DEFAULT),
                 iv = Base64.decode(parts[1], Base64.DEFAULT);
         final Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        //final GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH, iv);
         IvParameterSpec spec = new IvParameterSpec(iv);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
         return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
     }
-
-
 }
