@@ -2,15 +2,28 @@ package maps.bank_matrix;
 
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import database.Matrix;
 import database.MatrixDatabase;
@@ -22,8 +35,6 @@ public class MatrixActivity extends AppCompatActivity {
     private Spinner sp21, sp22, sp23;
     private Spinner sp31, sp32, sp33;
     private TextView tv1, tv2, tv3;
-    private TextView matrixName;
-    private String passkey;
 
     private String[][] matrix;
     private Matrix m;
@@ -32,13 +43,11 @@ public class MatrixActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_matrix);
 
-
         MatrixDatabase mDbHelper = new MatrixDatabase(MatrixActivity.this);
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         Intent i = getIntent();
         long matrixId = i.getLongExtra("matrixId", 0);
-        passkey = i.getStringExtra("passkey");
 
         m = Matrix.getMatrixById(db, matrixId);
 
@@ -46,34 +55,32 @@ public class MatrixActivity extends AppCompatActivity {
             Toast.makeText(this, "Matrix not set", Toast.LENGTH_SHORT).show();
             finish();
         }
-        matrix = m.getMatrix(passkey);
-        /*MatrixEncryption me = new MatrixEncryption(this, passkey);
 
-        if(!me.validMatrix()){
-            Toast.makeText(this, "Matrix not set", Toast.LENGTH_SHORT).show();
-            updateMatrix(null);
-        }else{
-            matrix = me.getMatrix();
-        }*/
+        try {
+            matrix = m.getMatrix();
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "Failed to decrypt: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
 
-        matrixName = (TextView) findViewById(R.id.matrixName);
+        TextView matrixName = findViewById(R.id.matrixName);
         matrixName.setText(m.name);
 
         //initialize the spinners
-        sp11 = (Spinner) findViewById(R.id.cell11);
-        sp12 = (Spinner) findViewById(R.id.cell12);
-        sp13 = (Spinner) findViewById(R.id.cell13);
-        sp21 = (Spinner) findViewById(R.id.cell21);
-        sp22 = (Spinner) findViewById(R.id.cell22);
-        sp23 = (Spinner) findViewById(R.id.cell23);
-        sp31 = (Spinner) findViewById(R.id.cell31);
-        sp32 = (Spinner) findViewById(R.id.cell32);
-        sp33 = (Spinner) findViewById(R.id.cell33);
+        sp11 = findViewById(R.id.cell11);
+        sp12 = findViewById(R.id.cell12);
+        sp13 = findViewById(R.id.cell13);
+        sp21 = findViewById(R.id.cell21);
+        sp22 = findViewById(R.id.cell22);
+        sp23 = findViewById(R.id.cell23);
+        sp31 = findViewById(R.id.cell31);
+        sp32 = findViewById(R.id.cell32);
+        sp33 = findViewById(R.id.cell33);
 
         //initialize the textViews
-        tv1 = (TextView) findViewById(R.id.output1);
-        tv2 = (TextView) findViewById(R.id.output2);
-        tv3 = (TextView) findViewById(R.id.output3);
+        tv1 = findViewById(R.id.output1);
+        tv2 = findViewById(R.id.output2);
+        tv3 = findViewById(R.id.output3);
 
         //adapter for the letters
         ArrayList<String> letters = new ArrayList<>();
@@ -153,7 +160,6 @@ public class MatrixActivity extends AppCompatActivity {
 
     public void updateMatrix(View view) {
         Intent intentMatrix =  new Intent(this, UpdateMatrix.class);
-        intentMatrix.putExtra("passkey", passkey);
         intentMatrix.putExtra("matrixId", m.id);
         intentMatrix.putExtra("update", true);
         startActivity(intentMatrix);

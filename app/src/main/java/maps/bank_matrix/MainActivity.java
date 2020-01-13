@@ -1,99 +1,141 @@
 package maps.bank_matrix;
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 
-    private EditText password;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.concurrent.Executor;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import database.Matrix;
+import database.MatrixDatabase;
+
+public class MainActivity extends AppCompatActivity {
+    private Executor executor;
+    private BiometricPrompt biometricPrompt;
+    private BiometricPrompt.PromptInfo promptInfo;
+
+    private SQLiteDatabase db;
+    private Preferences preferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
-        password = (EditText) findViewById(R.id.password);
+        executor = ContextCompat.getMainExecutor(this);
+        MatrixDatabase mDbHelper = new MatrixDatabase(this);
+        db = mDbHelper.getReadableDatabase();
 
-        password.setOnKeyListener(new View.OnKeyListener(){//code to make keyboard enter be the same as button click
-            public boolean onKey(View v, int keyCode, KeyEvent event){
-                if (event.getAction() == KeyEvent.ACTION_DOWN){
-                    if(keyCode == KeyEvent.KEYCODE_ENTER){
-                        advanceToMatrix(findViewById(R.id.go_btn));
-                        return true;
-                    }
-                }
-                return false;
+        if (Matrix.getAll(db).size() > 0) {
+            // has data, need to check for old method of login
+            preferences = new Preferences(this);
+            if (preferences.isPasswordDefined()) {
+                // user is still using old authentication method
+                promptLegacyPassword();
             }
-        });
-    }
-
-    public void advanceToMatrix(View view) {
-        validatePassword(password.getText().toString());
-    }
-
-    public void resetPassword(View view) {
-        promptNewPassword();
-    }
-
-    private void validatePassword(String attempt){
-        Preferences p = new Preferences(this);
-
-        if (!p.isPasswordDefined()){
-            Toast.makeText(MainActivity.this, "No password defined...", Toast.LENGTH_SHORT).show();
-            promptNewPassword();
-            return;
         }
 
-        if(p.validatePassword(attempt)){//correct password
-            password.setText("");
-            Intent intentMatrix =  new Intent(this, MatrixList.class);
-            intentMatrix.putExtra("passkey", attempt);
-            startActivity(intentMatrix);
-        }else{
-            Toast.makeText(MainActivity.this, "Wrong password", Toast.LENGTH_SHORT).show();
-        }
+        biometricPrompt = new BiometricPrompt(MainActivity.this, executor,
+                new BiometricPrompt.AuthenticationCallback() {
+                    @Override
+                    public void onAuthenticationFailed() {
+                        super.onAuthenticationFailed();
+                        Toast.makeText(getApplicationContext(), "Authentication failed", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                        super.onAuthenticationSucceeded(result);
+                        Toast.makeText(getApplicationContext(), "Authentication succeeded!", Toast.LENGTH_SHORT).show();
+                        advanceToMatrix();
+                    }
+
+                });
+
+        promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Matrix Biometric login")
+                .setSubtitle("Log in using your biometric login or default phone credentials")
+                .setDeviceCredentialAllowed(true)
+                .build();
+
+        // Login either with app open or click shield
+        ImageView fingerprintIcon = findViewById(R.id.fingerprintIcon);
+        fingerprintIcon.setOnClickListener(view -> biometricPrompt.authenticate(promptInfo));
+        biometricPrompt.authenticate(promptInfo);
     }
 
-    private void changePassword(String oldP, String newP){
-        Preferences p = new Preferences(this);
-        if(p.changePassword(oldP, newP)){
-            Toast.makeText(MainActivity.this, "Password set", Toast.LENGTH_SHORT).show();
-        }else{
-            Toast.makeText(MainActivity.this, "Wrong password", Toast.LENGTH_SHORT).show();
-        }
+    public void advanceToMatrix() {
+        Intent intentMatrix = new Intent(this, MatrixList.class);
+        startActivity(intentMatrix);
     }
 
-    private void promptNewPassword(){
+
+    private void promptLegacyPassword() {
         LayoutInflater inflater = this.getLayoutInflater();
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setMessage("Enter the old and the new password")
-            .setTitle("Change Password")
-            .setNegativeButton("Abort", null)
-            .setPositiveButton("Go", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    Dialog dialogObj =Dialog.class.cast(dialog);
-                    EditText oldEt = (EditText) dialogObj.findViewById(R.id.oldP);
-                    EditText newEt = (EditText) dialogObj.findViewById(R.id.newP);
+                .setMessage("Enter your password so we can update your authentication mechanism")
+                .setTitle("Update Authentication")
+                .setNegativeButton("Abort", null)
+                .setPositiveButton("Go", (dialog, which) -> {
+                    Dialog dialogObj = (Dialog) dialog;
+                    EditText oldEt = dialogObj.findViewById(R.id.oldP);
 
-                    changePassword(oldEt.getText().toString(), newEt.getText().toString());
-                }
-            })
-            .setView(inflater.inflate(R.layout.change_password, null));
+                    Preferences p = new Preferences(this);
+                    String insertedPass = oldEt.getText().toString();
+                    if (p.validatePassword(insertedPass)) {
+                        getNewAuthAfterLegacy(insertedPass);
+                    } else {
+                        promptLegacyPassword();
+                    }
+                })
+                .setView(inflater.inflate(R.layout.read_legacy_password, null));
         AlertDialog dialog = builder.create();
-        dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        Objects.requireNonNull(dialog.getWindow()).setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         dialog.show();
     }
 
+    private void getNewAuthAfterLegacy(String oldpass) {
+        Toast.makeText(getApplicationContext(), "Authentication succeeded!", Toast.LENGTH_SHORT).show();
+        ArrayList<Matrix> matrices = Matrix.getAll(db);
+        for (Matrix matrix : matrices) {
+            try {
+                matrix.decryptEncryptNewAuth(oldpass);//re-encrypt the matrix
+            } catch (NoSuchPaddingException | NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | NoSuchProviderException | InvalidAlgorithmParameterException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
+                e.printStackTrace();
+                Toast.makeText(getApplicationContext(), "Unexpected error", Toast.LENGTH_SHORT).show();
+                System.exit(1);
+            }
+        }
+
+        for (Matrix matrix : matrices)
+            matrix.updateMatrix(db);//update it in the database
+
+        preferences.deletePassword();
+        Toast.makeText(getApplicationContext(), "Success in re-encrypting your data. Please restart.", Toast.LENGTH_SHORT).show();
+    }
 }
+
