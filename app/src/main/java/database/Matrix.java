@@ -4,26 +4,19 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Base64;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import database.MatrixReader.MatrixEntry;
 import maps.bank_matrix.Cryptography;
@@ -192,51 +185,8 @@ public class Matrix {
 
     //Encryption functions
 
-    public void decryptEncryptNewAuth(String oldPasskey) throws NoSuchPaddingException, NoSuchAlgorithmException, KeyStoreException, CertificateException, IOException, NoSuchProviderException, InvalidAlgorithmParameterException, BadPaddingException, InvalidKeyException, IllegalBlockSizeException {
-        Cryptography cryptography = new Cryptography(KEY_NAME);
-        String temp = value;
-        temp = Matrix.legacyDecrypt(oldPasskey, temp);
-        temp = cryptography.encrypt(temp);
-        value = temp;
-    }
-
-
     public boolean validMatrix() {
         return value.length() > 0;
-    }
-
-    private static String legacyDecrypt(String passkey, String matrixString) {
-        try {
-            return legacyDecryptMsg(passkey, matrixString);
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException e) {
-            e.printStackTrace();
-            System.out.println("ERROR DECRYPTING: " + e.getMessage());
-        }
-        return "";
-    }
-
-
-    private static String legacyDecryptMsg(String passkey, String cipherTextString) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        byte[] cipherText = Base64.decode(cipherTextString, Base64.DEFAULT);
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.DECRYPT_MODE, legacyGetSecretFromKey(passkey));
-        return new String(cipher.doFinal(cipherText), StandardCharsets.UTF_8);
-    }
-
-
-    private static SecretKeySpec legacyGetSecretFromKey(String passkey) {
-        byte[] key;
-        MessageDigest sha;
-        try {
-            key = (passkey).getBytes(StandardCharsets.UTF_8);
-            sha = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        }
-        key = sha.digest(key);
-        key = Arrays.copyOf(key, 16); // use only first 128 bit
-        return new SecretKeySpec(key, "AES");
     }
 
     public int getTotalChars() {
