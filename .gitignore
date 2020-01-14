@@ -1,3 +1,6 @@
+.jks
+.pepk
+
 .idea/
 
 # Built application files
@@ -55,3 +58,5 @@ google-services.json
 freeline.py
 freeline/
 freeline_project_description.json
+
+*.pepk
