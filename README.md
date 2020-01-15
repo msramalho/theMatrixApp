@@ -3,7 +3,7 @@
 
 Allows user to save, edit and access multiple bank security matrices so as to avoid physical copies.
 
-Available on [Play Store](https://play.google.com/store/apps/details?id=maps.bank_matrix)
+Available on [Play Store](https://play.google.com/store/apps/details?id=maps.bank_matrix_2)
 
 * Old project that has since become open source
 * Android Application
