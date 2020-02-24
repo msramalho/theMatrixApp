@@ -28,26 +28,13 @@ Available on [Play Store](https://play.google.com/store/apps/details?id=maps.ban
 Keep your bank matrix or matrices in one secure place - your phone. Stop hiding your paper copies from thieves. With Matrix you don't even need to remember to bring anything just because you'll need to make a transaction.
 
 Features:
- * Password protected (no plain text records - we hash your password).
+ * Biometrics encryption
  * Every matrix is encrypted using AES algorithm.
- * Local data (no internet access is required)
+ * Local data (no internet access is required, but you can use [Android backups](https://support.google.com/android/answer/2819582?hl=en) to sync between devices)
  * No permissions required
  * Slick Black and White Design
  * No adds
 
-Some banks adn entities that use this security system:
- * Caixa Geral de Depósitos - cgd
- * Montepio
- * Santander Totta
- * Bankinter
- * ICBC
- * BSN
- * Visa Europe
- * Cornèr Bank
- * Consult Hyperion
- * Barclays
- * Raiffeisen Switzerland
- * Many more
 
 What is a Bank Account Security Matrix Card?
 Essentially, a table of digits that function as a second layer of authentication (2FA Two-Factor Authentication). On each important transaction your bank will ask you for 3 random digits of this Table to ensure a more secure transaction. Most people save their matrices in paper format, with this app that is a thing of the past!
@@ -58,9 +45,5 @@ Alternate names:
  * Grid Card
  * E-banking Code Card
  * Bank Matrix
- * CodeSure card
- * Visa CodeSure
- * BarclayCard
- * VASCO
  * Cartão Matriz
  * Matriz de Segurança
